@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = 'simple-html-app'
         BUILD_DIR = 'build'
-        DEPLOY_DIR = '/var/www/html'  // You can change this depending on where you want to deploy
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
+                // Checkout code from Git repository
                 checkout scm
             }
         }
@@ -17,61 +16,57 @@ pipeline {
         stage('Setup') {
             steps {
                 echo 'Setting up the environment...'
-                script {
-                    // No environment setup is needed for basic HTML app
-                    // Just creating a build directory for structure
-                    sh 'mkdir -p ${BUILD_DIR}'
-                }
+                // Create a build directory
+                sh 'mkdir -p $BUILD_DIR'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the HTML Application...'
-                script {
-                    // In this case, there is no real "build" step, since it's a static HTML app.
-                    // We will simply copy the HTML files to the build directory.
-                    sh 'cp -r * ${BUILD_DIR}'
-                }
+                echo 'Building the HTML application...'
+                // Copy the necessary files to the build directory
+                sh 'cp index.html README.md $BUILD_DIR'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                script {
-                    // In this case, we don't have any specific tests for a static HTML app,
-                    // but you could add steps to check for file existence or structure here.
-                    // For example:
-                    sh 'if [ ! -f ${BUILD_DIR}/index.html ]; then echo "index.html not found!"; exit 1; fi'
-                }
+                // You can add your test steps here
+                // For example, if you have unit tests, you can run them in this stage.
+                // Since this is a simple HTML app, you may skip this stage or add a simple check like validating the HTML.
+                sh 'echo "No tests for HTML app"'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying the HTML Application...'
-                script {
-                    // For deployment, we'll assume you're deploying to a directory on a server.
-                    // You can replace this with your actual deployment logic (e.g., using FTP, SSH, etc.)
-                    echo "Deploying to ${DEPLOY_DIR}"
-                    sh 'cp -r ${BUILD_DIR}/* ${DEPLOY_DIR}/'
-                }
+                echo 'Deploying the application...'
+                // Assuming you have a simple deploy step like moving the files to a web server or another location
+                // For example, you can use `scp` to copy the files to a remote server.
+                sh 'cp -r $BUILD_DIR/* /var/www/html'  // This is just an example, adapt to your own deployment needs.
             }
         }
 
         stage('Post Actions') {
             steps {
-                echo 'Cleaning up...'
-                // Cleanup steps, if needed
+                echo 'Cleaning up workspace...'
+                cleanWs()  // Clean the workspace after the build is done
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning workspace...'
-            deleteDir() // Clean up the workspace after the build is finished
+            echo 'Build finished'
+        }
+
+        success {
+            echo 'The build was successful!'
+        }
+
+        failure {
+            echo 'The build failed.'
         }
     }
 }
