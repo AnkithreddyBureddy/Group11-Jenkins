@@ -33,4 +33,3 @@ Clone this repository to your local machine:
 
 ```bash
 git clone https://github.com/AnkithreddyBureddy/Group11-Jenkins.git
-![Uploading image.png…]()
