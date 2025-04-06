@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = 'simple-html-app'
         BUILD_DIR = 'build'
-        DEPLOY_DIR = '/var/www/html'  // Change this if deploying elsewhere
+        DEPLOY_DIR = '/var/www/html'
     }
 
     stages {
@@ -19,8 +18,7 @@ pipeline {
             steps {
                 echo 'Setting up the environment...'
                 script {
-                    // Create a clean build directory
-                    sh 'mkdir -p ${BUILD_DIR}'
+                    sh "mkdir -p ${BUILD_DIR}"
                 }
             }
         }
@@ -29,8 +27,8 @@ pipeline {
             steps {
                 echo 'Building the HTML Application...'
                 script {
-                    // Copy all files except the build directory itself
-                    sh 'find . -maxdepth 1 ! -name build ! -name "." -exec cp -r {} ${BUILD_DIR} \\;'
+                    // Copy files except build dir itself
+                    sh "find . -maxdepth 1 ! -name ${BUILD_DIR} ! -name . -exec cp -r {} ${BUILD_DIR}/ \\;"
                 }
             }
         }
@@ -39,8 +37,7 @@ pipeline {
             steps {
                 echo 'Running tests...'
                 script {
-                    // Check if index.html exists in the build directory
-                    sh 'if [ ! -f ${BUILD_DIR}/index.html ]; then echo "index.html not found!"; exit 1; fi'
+                    sh "[ -f ${BUILD_DIR}/index.html ]"
                 }
             }
         }
@@ -50,14 +47,11 @@ pipeline {
                 echo 'Deploying the HTML Application...'
                 script {
                     echo "Deploying to ${DEPLOY_DIR}"
-                    sh 'cp -r ${BUILD_DIR}/* ${DEPLOY_DIR}/'
+                    sh """
+                        mkdir -p ${DEPLOY_DIR}
+                        cp -r ${BUILD_DIR}/* ${DEPLOY_DIR}/
+                    """
                 }
-            }
-        }
-
-        stage('Post Actions') {
-            steps {
-                echo 'Post-deployment steps, if any...'
             }
         }
     }
@@ -67,13 +61,11 @@ pipeline {
             echo 'Cleaning workspace...'
             deleteDir()
         }
-
         failure {
             echo 'Build failed!'
         }
-
         success {
-            echo 'Build and deployment succeeded!'
+            echo 'Build and Deployment completed successfully!'
         }
     }
 }
