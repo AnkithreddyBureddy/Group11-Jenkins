@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         BUILD_DIR = 'build'
-        DEPLOY_DIR = '/var/www/html'
+        DEPLOY_DIR = "${env.WORKSPACE}/deploy"
     }
 
     stages {
@@ -18,7 +18,7 @@ pipeline {
             steps {
                 echo 'Setting up the environment...'
                 script {
-                    sh "mkdir -p ${BUILD_DIR}"
+                    sh 'mkdir -p build'
                 }
             }
         }
@@ -27,8 +27,7 @@ pipeline {
             steps {
                 echo 'Building the HTML Application...'
                 script {
-                    // Copy files except build dir itself
-                    sh "find . -maxdepth 1 ! -name ${BUILD_DIR} ! -name . -exec cp -r {} ${BUILD_DIR}/ \\;"
+                    sh 'find . -maxdepth 1 ! -name build ! -name . -exec cp -r {} build/ \\;'
                 }
             }
         }
@@ -37,7 +36,7 @@ pipeline {
             steps {
                 echo 'Running tests...'
                 script {
-                    sh "[ -f ${BUILD_DIR}/index.html ]"
+                    sh '[ -f build/index.html ]'
                 }
             }
         }
@@ -65,7 +64,7 @@ pipeline {
             echo 'Build failed!'
         }
         success {
-            echo 'Build and Deployment completed successfully!'
+            echo 'Build succeeded!'
         }
     }
 }
