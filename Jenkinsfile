@@ -4,7 +4,7 @@ pipeline {
     environment {
         APP_NAME = 'simple-html-app'
         BUILD_DIR = 'build'
-        DEPLOY_DIR = '/var/www/html'  // Modify this if deploying to a different directory
+        DEPLOY_DIR = '/var/www/html'  // Change this if deploying elsewhere
     }
 
     stages {
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 echo 'Setting up the environment...'
                 script {
-                    // Create a build directory to hold the files for deployment
+                    // Create a clean build directory
                     sh 'mkdir -p ${BUILD_DIR}'
                 }
             }
@@ -29,8 +29,8 @@ pipeline {
             steps {
                 echo 'Building the HTML Application...'
                 script {
-                    // Since it's a static HTML app, we simply copy the files to the build directory
-                    sh 'cp -r * ${BUILD_DIR}'
+                    // Copy all files except the build directory itself
+                    sh 'find . -maxdepth 1 ! -name build ! -name "." -exec cp -r {} ${BUILD_DIR} \\;'
                 }
             }
         }
@@ -39,9 +39,8 @@ pipeline {
             steps {
                 echo 'Running tests...'
                 script {
-                    // Check if the essential files exist in the build directory
+                    // Check if index.html exists in the build directory
                     sh 'if [ ! -f ${BUILD_DIR}/index.html ]; then echo "index.html not found!"; exit 1; fi'
-                    sh 'echo "index.html found, continuing with the build!"'
                 }
             }
         }
@@ -50,9 +49,7 @@ pipeline {
             steps {
                 echo 'Deploying the HTML Application...'
                 script {
-                    // Ensure the deploy directory exists, create it if necessary
-                    sh 'mkdir -p ${DEPLOY_DIR}'
-                    // Deploy the HTML files to the server directory
+                    echo "Deploying to ${DEPLOY_DIR}"
                     sh 'cp -r ${BUILD_DIR}/* ${DEPLOY_DIR}/'
                 }
             }
@@ -60,8 +57,7 @@ pipeline {
 
         stage('Post Actions') {
             steps {
-                echo 'Cleaning up workspace...'
-                // Optional cleanup after deployment (e.g., removing temporary files)
+                echo 'Post-deployment steps, if any...'
             }
         }
     }
@@ -69,15 +65,15 @@ pipeline {
     post {
         always {
             echo 'Cleaning workspace...'
-            deleteDir() // Clean up the workspace after the build is finished
-        }
-
-        success {
-            echo 'Build succeeded!'
+            deleteDir()
         }
 
         failure {
             echo 'Build failed!'
+        }
+
+        success {
+            echo 'Build and deployment succeeded!'
         }
     }
 }
