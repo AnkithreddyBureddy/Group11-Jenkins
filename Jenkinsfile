@@ -2,13 +2,15 @@ pipeline {
     agent any
 
     environment {
+        APP_NAME = 'simple-html-app'
         BUILD_DIR = 'build'
+        DEPLOY_DIR = '/var/www/html'  // Modify this if deploying to a different directory
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                // Checkout code from Git repository
+                echo 'Checking out the code from GitHub...'
                 checkout scm
             }
         }
@@ -16,57 +18,66 @@ pipeline {
         stage('Setup') {
             steps {
                 echo 'Setting up the environment...'
-                // Create a build directory
-                sh 'mkdir -p $BUILD_DIR'
+                script {
+                    // Create a build directory to hold the files for deployment
+                    sh 'mkdir -p ${BUILD_DIR}'
+                }
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the HTML application...'
-                // Copy the necessary files to the build directory
-                sh 'cp index.html README.md $BUILD_DIR'
+                echo 'Building the HTML Application...'
+                script {
+                    // Since it's a static HTML app, we simply copy the files to the build directory
+                    sh 'cp -r * ${BUILD_DIR}'
+                }
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // You can add your test steps here
-                // For example, if you have unit tests, you can run them in this stage.
-                // Since this is a simple HTML app, you may skip this stage or add a simple check like validating the HTML.
-                sh 'echo "No tests for HTML app"'
+                script {
+                    // Check if the essential files exist in the build directory
+                    sh 'if [ ! -f ${BUILD_DIR}/index.html ]; then echo "index.html not found!"; exit 1; fi'
+                    sh 'echo "index.html found, continuing with the build!"'
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying the application...'
-                // Assuming you have a simple deploy step like moving the files to a web server or another location
-                // For example, you can use `scp` to copy the files to a remote server.
-                sh 'cp -r $BUILD_DIR/* /var/www/html'  // This is just an example, adapt to your own deployment needs.
+                echo 'Deploying the HTML Application...'
+                script {
+                    // Ensure the deploy directory exists, create it if necessary
+                    sh 'mkdir -p ${DEPLOY_DIR}'
+                    // Deploy the HTML files to the server directory
+                    sh 'cp -r ${BUILD_DIR}/* ${DEPLOY_DIR}/'
+                }
             }
         }
 
         stage('Post Actions') {
             steps {
                 echo 'Cleaning up workspace...'
-                cleanWs()  // Clean the workspace after the build is done
+                // Optional cleanup after deployment (e.g., removing temporary files)
             }
         }
     }
 
     post {
         always {
-            echo 'Build finished'
+            echo 'Cleaning workspace...'
+            deleteDir() // Clean up the workspace after the build is finished
         }
 
         success {
-            echo 'The build was successful!'
+            echo 'Build succeeded!'
         }
 
         failure {
-            echo 'The build failed.'
+            echo 'Build failed!'
         }
     }
 }
